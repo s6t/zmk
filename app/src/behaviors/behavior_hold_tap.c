@@ -35,6 +35,7 @@ enum flavor {
     FLAVOR_BALANCED,
     FLAVOR_TAP_PREFERRED,
     FLAVOR_TAP_UNLESS_INTERRUPTED,
+    FLAVOR_TAP_UNLESS_OTHER_KEY_UP,
 };
 
 enum status {
@@ -324,6 +325,26 @@ static void decide_tap_unless_interrupted(struct active_hold_tap *hold_tap,
     }
 }
 
+static void decide_tap_unless_other_key_up(struct active_hold_tap *hold_tap,
+                                          enum decision_moment event) {
+    switch (event) {
+    case HT_KEY_UP:
+        hold_tap->status = STATUS_TAP;
+        return;
+    case HT_OTHER_KEY_UP:
+        hold_tap->status = STATUS_HOLD_INTERRUPT;
+        return;
+    case HT_TIMER_EVENT:
+        hold_tap->status = STATUS_TAP;
+        return;
+    case HT_QUICK_TAP:
+        hold_tap->status = STATUS_TAP;
+        return;
+    default:
+        return;
+    }
+}
+
 static void decide_hold_preferred(struct active_hold_tap *hold_tap, enum decision_moment event) {
     switch (event) {
     case HT_KEY_UP:
@@ -353,6 +374,8 @@ static inline const char *flavor_str(enum flavor flavor) {
         return "tap-preferred";
     case FLAVOR_TAP_UNLESS_INTERRUPTED:
         return "tap-unless-interrupted";
+    case FLAVOR_TAP_UNLESS_OTHER_KEY_UP:
+        return "tap-unless-other-key-up";
     default:
         return "UNKNOWN FLAVOR";
     }
@@ -532,6 +555,9 @@ static void decide_hold_tap(struct active_hold_tap *hold_tap,
         break;
     case FLAVOR_TAP_UNLESS_INTERRUPTED:
         decide_tap_unless_interrupted(hold_tap, decision_moment);
+        break;
+    case FLAVOR_TAP_UNLESS_OTHER_KEY_UP:
+        decide_tap_unless_other_key_up(hold_tap, decision_moment);
         break;
     }
 
